@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Shift Calendar</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f7f7f7;
+            color: #333;
+            display: flex;
+            flex-direction: row;
+            gap: 20px;
+        }
+        .main-content {
+            flex: 2;
+        }
+        .team-list {
+            flex: 1;
+            padding: 10px;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .controls {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .controls button {
+            margin: 0 5px;
+            padding: 10px 15px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .controls button:hover {
+            background-color: #0056b3;
+        }
+        .current-shifter {
+            text-align: center;
+            margin-bottom: 20px;
+            font-size: 18px;
+            font-weight: bold;
+            color: #007bff;
+        }
+        .calendar {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 10px;
+            max-width: 700px;
+            margin: 0 auto;
+        }
+        .day {
+            padding: 10px;
+            background-color: white;
+            border-radius: 5px;
+            text-align: center;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        .day.today {
+            background-color: #cce5ff;
+            border: 1px solid #007bff;
+            font-weight: bold;
+        }
+        .day.shifter {
+            font-weight: bold;
+        }
+        .day.muted {
+            background-color: #f1f1f1;
+            color: #999;
+        }
+        .day span {
+            display: block;
+            font-size: 14px;
+            margin-top: 5px;
+        }
+        .team-list h2 {
+            text-align: center;
+            margin-bottom: 15px;
+            font-size: 18px;
+            color: #007bff;
+        }
+        .team {
+            margin-bottom: 20px;
+        }
+        .team-name {
+            font-weight: bold;
+            padding: 5px;
+            border-radius: 5px;
+            color: white;
+            margin-bottom: 5px;
+        }
+        .team-members {
+            padding-left: 15px;
+        }
+        .team-a { background-color: #ff6f61; }
+        .team-b { background-color: #6fa8dc; }
+        .team-c { background-color: #b6d7a8; }
+        .team-d { background-color: #ffd966; }
+        .team-e { background-color: #c27ba0; }
+        .team-f { background-color: #674ea7; }
+    </style>
+</head>
+<body>
+    <div class="main-content">
+        <h1>Interactive Shift Calendar</h1>
+        <div class="current-shifter" id="current-shifter">Current Shifter: Team A</div>
+        <div class="controls">
+            <button id="prev-week">Previous Week</button>
+            <button id="today">Today</button>
+            <button id="next-week">Next Week</button>
+        </div>
+        <div id="calendar" class="calendar"></div>
+    </div>
+    <div class="team-list">
+        <h2>Teams & Members</h2>
+        <div class="team">
+            <div class="team-name team-a">Team A: Member 1, Member 2, Member 3</div>
+        </div>
+        <div class="team">
+            <div class="team-name team-b">Team B: Member 1, Member 2, Member 3</div>
+        </div>
+        <div class="team">
+            <div class="team-name team-c">Team C: Member 1, Member 2, Member 3</div>
+        </div>
+        <div class="team">
+            <div class="team-name team-d">Team D: Member 1, Member 2, Member 3</div>
+        </div>
+        <div class="team">
+            <div class="team-name team-e">Team E: Member 1, Member 2, Member 3</div>
+        </div>
+        <div class="team">
+            <div class="team-name team-f">Team F: Member 1, Member 2, Member 3</div>
+        </div>
+    </div>
+
+    <script>
+        const teams = ["Team A", "Team B", "Team C", "Team D", "Team E", "Team F"];
+        const teamColors = {
+            "Team A": "#ff6f61",
+            "Team B": "#6fa8dc",
+            "Team C": "#b6d7a8",
+            "Team D": "#ffd966",
+            "Team E": "#c27ba0",
+            "Team F": "#674ea7"
+        };
+        const calendarElement = document.getElementById("calendar");
+        const currentShifterElement = document.getElementById("current-shifter");
+        let currentDate = new Date();
+
+        function getStartOfWeek(date) {
+            const startOfWeek = new Date(date);
+            startOfWeek.setDate(date.getDate() + ((3 - date.getDay() + 7) % 7)); // Next Wednesday
+            return startOfWeek;
+        }
+
+        function formatDate(date) {
+            const options = { month: 'short', day: 'numeric' };
+            return date.toLocaleDateString(undefined, options);
+        }
+
+        function getTeamForDate(date) {
+            const startOfRotation = getStartOfWeek(new Date());
+            const weeksDifference = Math.floor((date - startOfRotation) / (7 * 24 * 60 * 60 * 1000));
+            return teams[(weeksDifference % teams.length + teams.length) % teams.length];
+        }
+
+        function isShifterDay(date) {
+            const startOfShift = getStartOfWeek(date);
+            const endOfShift = new Date(startOfShift);
+            endOfShift.setDate(endOfShift.getDate() + 6); // Wednesday to Wednesday
+            return date >= startOfShift && date <= endOfShift;
+        }
+
+        function generateCalendar(date) {
+            calendarElement.innerHTML = ''; // Clear the calendar
+            const startOfMonth = new Date(date.getFullYear(), date.getMonth(), 1);
+            const endOfMonth = new Date(date.getFullYear(), date.getMonth() + 1, 0);
+
+            let currentDate = new Date(startOfMonth);
+            currentDate.setDate(currentDate.getDate() - currentDate.getDay()); // Start from Sunday of the first week
+
+            while (currentDate <= endOfMonth || currentDate.getDay() !== 0) {
+                const dayElement = document.createElement("div");
+                dayElement.className = "day";
+
+                const currentTeam = getTeamForDate(currentDate);
+
+                if (currentDate.toDateString() === new Date().toDateString()) {
+                    dayElement.classList.add("today");
+                } else if (isShifterDay(currentDate)) {
+                    dayElement.classList.add("shifter");
+                    dayElement.style.backgroundColor = teamColors[currentTeam]; // Highlight with the team's color
+                } else if (currentDate.getMonth() !== date.getMonth()) {
+                    dayElement.classList.add("muted");
+                }
+
+                dayElement.innerHTML = `
+                    ${formatDate(currentDate)}
+                    <span>${currentTeam}</span>
+                `;
+                calendarElement.appendChild(dayElement);
+                currentDate.setDate(currentDate.getDate() + 1);
+            }
+        }
+
+        function updateCurrentShifter() {
+            const today = new Date();
+            currentShifterElement.innerText = `Current Shifter: ${getTeamForDate(today)}`;
+        }
+
+        document.getElementById("prev-week").addEventListener("click", () => {
+            currentDate.setDate(currentDate.getDate() - 7);
+            generateCalendar(currentDate);
+            updateCurrentShifter();
+        });
+
+        document.getElementById("next-week").addEventListener("click", () => {
+            currentDate.setDate(currentDate.getDate() + 7);
+            generateCalendar(currentDate);
+            updateCurrentShifter();
+        });
+
+        document.getElementById("today").addEventListener("click", () => {
+            currentDate = new Date();
+            generateCalendar(currentDate);
+            updateCurrentShifter();
+        });
+
+        generateCalendar(currentDate);
+        updateCurrentShifter();
+    </script>
+</body>
+</html>
